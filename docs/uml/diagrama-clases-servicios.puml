@@ -1,0 +1,88 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+left to right direction
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor White
+  BorderColor #444444
+}
+title Barrio Los Aromos - Diagrama de clases: servicios y controladores (etapa 2)
+
+package "servicios / controladores" as srv {
+  class ReclamoController {
+    +presentarReclamo(lote, persona, tipo, desc, fecha)
+    +asignarReclamo(nro, empleado, fecha)
+  }
+  class GestorReclamos {
+    +validarReclamo(lote, persona) : boolean
+    +cambiarEstado(nro, estado, fecha, obs)
+    +escalarReclamos(ahora)
+    +cerrarReclamosVencidos(ahora)
+  }
+  class ServicioExpensas {
+    +emitirExpensas(periodo, presupuesto)
+    +imputarPago(lote, fecha, importe, medio)
+    +registrarAjuste(nroPago, motivo, fecha)
+    +actualizarMorosidad(fecha)
+  }
+  class GestorMantenimiento {
+    +registrarFalla(codigo, desc, quien, fecha)
+    +generarOrden(codigo, tecnico, desc, fecha)
+    +cerrarOrden(nro, fecha, tecnico, desc)
+    +verificarCamaras(ahora)
+  }
+  class ControladorAcceso {
+    +registrarIngreso(documento, lote, fechaHora)
+    +buscarAutorizacionVigente(doc, lote, fechaHora)
+    +tieneIngresoAbierto(documento) : boolean
+  }
+  class ServicioReportes {
+    +reportarReclamos()
+    +reportarMorosidad(fecha)
+    +reportarEquipos()
+  }
+  class ComparadorLotesPorDeuda {
+    +compare(a, b) : int
+  }
+  class ComparadorEquiposPorSector {
+    +compare(a, b) : int
+  }
+  interface Notificador {
+    +notificar(fecha, destinatario, mensaje)
+  }
+  class NotificadorAdministrador
+  class RepositorioDatos {
+    +guardar(...)
+    +guardarEnArchivo()
+    +cargarDesdeArchivo()
+  }
+}
+
+ReclamoController --> GestorReclamos
+ReclamoController --> RepositorioDatos
+GestorReclamos --> Notificador
+ServicioExpensas --> Notificador
+GestorMantenimiento --> Notificador
+Notificador <|.. NotificadorAdministrador
+ControladorAcceso --> RepositorioDatos
+ServicioReportes --> RepositorioDatos
+ServicioReportes ..> ComparadorLotesPorDeuda
+ServicioReportes ..> ComparadorEquiposPorSector
+ReclamoController ..> Reclamo : crea
+ReclamoController ..> Lote
+GestorReclamos ..> Reclamo
+ServicioExpensas ..> Lote
+ServicioExpensas ..> Pago : crea
+GestorMantenimiento ..> Equipo
+GestorMantenimiento ..> OrdenMantenimiento : crea
+ControladorAcceso ..> Autorizacion : crea
+ControladorAcceso ..> RegistroIngreso : crea
+class Reclamo
+class Lote
+class Pago
+abstract class Equipo
+class OrdenMantenimiento
+class Autorizacion
+class RegistroIngreso
+@enduml
