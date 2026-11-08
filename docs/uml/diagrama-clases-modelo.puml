@@ -1,0 +1,203 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+left to right direction
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor White
+  BorderColor #444444
+}
+title Barrio Los Aromos - Diagrama de clases: modelo (etapa 2)
+
+package personas {
+  abstract class Persona {
+    -nombre : String
+    -apellido : String
+    -documento : String
+    -telefono : String
+    -correo : String
+    +obtenerNombreCompleto() : String
+    +{abstract} getRol() : String
+    +{abstract} puedePresentarReclamos() : boolean
+  }
+  class Titular {
+    +autorizarResidente(lote, residente)
+  }
+  class Residente {
+    -tipo : TipoResidente
+    -autorizadoReclamos : boolean
+  }
+  abstract class Personal {
+    -legajo : int
+    -nombre : String
+    -fechaIngreso : LocalDate
+    +{abstract} obtenerResponsabilidad() : String
+  }
+  class Guardia {
+    -turno : String
+    -puesto : PuestoGuardia
+  }
+  class EmpleadoMantenimiento {
+    -especialidad : Especialidad
+  }
+  class Administrador
+}
+
+package lotes {
+  class Lote <<Comparable>> {
+    -numero : int
+    -superficie : double
+    -moroso : boolean
+    +esTitularOAutorizado(persona) : boolean
+    +buscarHabitante(documento) : Persona
+    +crearExpensa(periodo, presupuesto, supTotal) : Expensa
+    +actualizarMorosidad(fecha) : boolean
+    +calcularDeudaTotal(fecha) : double
+  }
+}
+
+package expensas {
+  class Expensa <<Comparable>> {
+    -periodo : YearMonth
+    -importe : double
+    -vencimiento : LocalDate
+    -capitalPagado : double
+    -interesPagado : double
+    +calcularInteres(fecha) : double
+    +obtenerEstado(fecha) : EstadoExpensa
+  }
+  class Pago {
+    -numero : int
+    -fecha : LocalDate
+    -importe : double
+    -medio : MedioPago
+    +validarImporte() : boolean
+  }
+  class AplicacionPago {
+    -interesAplicado : double
+    -capitalAplicado : double
+    +imputar(fecha)
+  }
+  class AsientoAjuste {
+    -importe : double
+    -motivo : String
+    +aplicar()
+  }
+}
+
+package reclamos {
+  class Reclamo <<Comparable>> {
+    -numero : int
+    -fecha : LocalDateTime
+    -tipo : TipoReclamo
+    -prioridad : Prioridad
+    -estado : EstadoReclamo
+    -asignarPrioridad()
+    +asignar(empleado, fecha)
+    +cambiarEstado(nuevo, fecha, obs)
+    +reabrir(fecha, obs)
+    +cerrar(fecha)
+    +requiereEscalamiento(ahora) : boolean
+  }
+  class HistorialEstado {
+    -fecha : LocalDateTime
+    -estado : EstadoReclamo
+    -observacion : String
+  }
+  class Comentario {
+    -fecha : LocalDateTime
+    -autor : String
+    -texto : String
+  }
+}
+
+package equipos {
+  abstract class Equipo {
+    -codigo : String
+    -sector : String
+    -estado : EstadoEquipo
+    +{abstract} calcularPrioridadFalla(equipos) : PrioridadOrden
+    +registrarFalla(falla)
+    +horasSinFuncionar(ahora) : long
+  }
+  class Camara {
+    -resolucion : String
+    -diasGrabacion : int
+  }
+  class Luminaria {
+    -tipoLampara : String
+    -potencia : int
+  }
+  class Falla
+  class OrdenMantenimiento {
+    -fechaApertura : LocalDateTime
+    -prioridad : PrioridadOrden
+    -descripcionTrabajo : String
+    -fechaCierre : LocalDateTime
+    -reparacion : String
+    +cerrarOrden(fecha, tecnico, descripcion)
+  }
+  interface EstrategiaPrioridadOrden {
+    +calcular(equipo, equipos) : PrioridadOrden
+  }
+  class PrioridadCamara
+  class PrioridadLuminaria
+}
+
+package visitas {
+  class Autorizacion {
+    -nombreVisitante : String
+    -documento : String
+    -fecha : LocalDate
+    -horaDesde : LocalTime
+    -horaHasta : LocalTime
+    +esVigente(fechaHora) : boolean
+  }
+  class AutorizacionRecurrente {
+    -empresa : String
+    -fechaHasta : LocalDate
+    +esVigente(fechaHora) : boolean
+  }
+  class RegistroIngreso {
+    -ingreso : LocalDateTime
+    -egreso : LocalDateTime
+    +registrarEgreso(fechaHora)
+  }
+}
+
+
+Persona <|-- Titular
+Persona <|-- Residente
+Personal <|-- Guardia
+Personal <|-- EmpleadoMantenimiento
+Personal <|-- Administrador
+
+Lote "*" --> "1" Titular : titular
+Lote "1" o-- "*" Residente : residentes
+Lote "1" *-- "*" Expensa : genera
+Pago "1" *-- "*" AplicacionPago : aplicaciones
+AplicacionPago "*" --> "1" Expensa
+AsientoAjuste "0..1" --> "1" Pago : corrige
+
+Reclamo "*" --> "1" Lote
+Reclamo "*" --> "1" Persona : presentadoPor
+Reclamo "*" --> "0..1" Personal : responsable
+Reclamo "1" *-- "*" HistorialEstado : historial
+Reclamo "1" *-- "*" Comentario
+
+Equipo <|-- Camara
+Equipo <|-- Luminaria
+Equipo "1" *-- "*" Falla
+Equipo "1" o-- "*" OrdenMantenimiento : ordenes
+OrdenMantenimiento "*" --> "1" EmpleadoMantenimiento : tecnico
+EstrategiaPrioridadOrden <|.. PrioridadCamara
+EstrategiaPrioridadOrden <|.. PrioridadLuminaria
+Camara --> PrioridadCamara
+Luminaria --> PrioridadLuminaria
+
+Autorizacion <|-- AutorizacionRecurrente
+Autorizacion "*" --> "1" Lote
+Autorizacion "*" --> "1" Persona : autorizadaPor
+RegistroIngreso "*" --> "1" Autorizacion
+
+@enduml
